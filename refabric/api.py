@@ -1,0 +1,38 @@
+from functools import partial
+
+import fabric.state
+from fabric.decorators import task
+
+from .state import load_blueprints
+from .tasks import dispatch
+
+__all__ = ['bootstrap']
+
+
+def bootstrap():
+    """
+    Add state- and role-tasks, i.e. app@live
+    Import blueprint libraries
+    """
+    for env_name, env in fabric.state.env.states.items():
+        if env_name == 'default':
+            continue
+
+        task_name = '@{env}'.format(env=env_name)
+        state_task = partial(dispatch, env_name)
+        docstring = 'switch to configured Fab env "{env}"'.format(env=env_name)
+
+        state_task.__doc__ = docstring
+        fabric.state.commands[task_name] = task(state_task)
+
+        roledefs = env.get('roledefs')
+        if roledefs:
+            for role_name in roledefs.keys():
+                task_name = '{role}@{env}'.format(role=role_name, env=env_name)
+                state_task = partial(dispatch, env_name, roles=[role_name])
+                docstring = 'switch to configured Fab env "{env}", ' \
+                            'and use role "{role}"'.format(env=env_name, role=role_name)
+                state_task.__doc__ = docstring
+                fabric.state.commands[task_name] = task(state_task)
+
+    load_blueprints()
