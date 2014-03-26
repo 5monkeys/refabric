@@ -1,3 +1,4 @@
+from functools import partial
 import fabric.state
 from fabric.main import load_tasks_from_module, _task_names
 from re import compile
@@ -43,11 +44,15 @@ def load_blueprints(packages=None):
     blueprints.update(executables)
 
 
-def getenv(path, default=None):
+def resolve(path, prefix=None, default=None):
     """
-    Fabric env lookup helper with deep dot notation, parent fallback and variable lookup
+    Fabric env lookup helper with deep dot notation, parent fallback and variable resolving
     """
     try:
+        # Prefix path
+        if prefix:
+            path = '.'.join((prefix, path))
+
         # Crawl env with path; a.b.c.edge -> env[a][b][c][edge]
         nodes = path.split('.')
         value = reduce(lambda d, k: d[k], nodes, fabric.state.env)
@@ -60,14 +65,17 @@ def getenv(path, default=None):
             # Try edge parent, a.b.c.edge -> a.b.edge
             nodes = tuple(nodes)
             path = '.'.join(nodes[:-2] + nodes[-1:])
-            value = getenv(path, default=default)
+            value = resolve(path, default=default)
 
     if value:
         # Resolve internal variables; $(...)
-        resolve_var = lambda v, m: v.replace(m.group(0), getenv(m.group(1), default=default))
+        resolve_var = lambda v, m: v.replace(m.group(0), resolve(m.group(1), default=default))
         value = reduce(resolve_var, VAR_PATTERN.finditer(value), value)
 
     if value:
         value = value.strip()
 
     return value
+
+
+blueprint_settings = lambda module: partial(resolve, prefix='settings.{}'.format(module.rsplit('.')[-1]))
