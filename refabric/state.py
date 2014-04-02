@@ -44,14 +44,17 @@ def load_blueprints(packages=None):
     blueprints.update(executables)
 
 
-def resolve(path, prefix=None, default=None):
+def resolve(path=None, prefix=None, default=None):
     """
     Fabric env lookup helper with deep dot notation, parent fallback and variable resolving
     """
     try:
         # Prefix path
         if prefix:
-            path = '.'.join((prefix, path))
+            if path:
+                path = '.'.join((prefix, path))
+            else:
+                path = prefix
 
         # Crawl env with path; a.b.c.edge -> env[a][b][c][edge]
         nodes = path.split('.')
@@ -67,13 +70,14 @@ def resolve(path, prefix=None, default=None):
             path = '.'.join(nodes[:-2] + nodes[-1:])
             value = resolve(path, default=default)
 
-    if value:
-        # Resolve internal variables; $(...)
-        resolve_var = lambda v, m: v.replace(m.group(0), resolve(m.group(1), default=default))
-        value = reduce(resolve_var, VAR_PATTERN.finditer(value), value)
+    if isinstance(value, basestring):
+        if value:
+            # Resolve internal variables; $(...)
+            resolve_var = lambda v, m: v.replace(m.group(0), resolve(m.group(1), default=default))
+            value = reduce(resolve_var, VAR_PATTERN.finditer(value), value)
 
-    if value:
-        value = value.strip()
+        if value:
+            value = value.strip()
 
     return value
 
