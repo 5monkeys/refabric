@@ -80,6 +80,3 @@ def resolve(path=None, prefix=None, default=None):
             value = value.strip()
 
     return value
-
-
-blueprint_settings = lambda module: partial(resolve, prefix='settings.{}'.format(module.rsplit('.')[-1]))

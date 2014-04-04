@@ -1,11 +1,14 @@
 import base64
 import fabric.api
+from fabric.colors import magenta
 import fabric.operations
 import fabric.contrib.files
 import fabric.contrib.project
 import fabric.context_managers
+from fabric.utils import puts, indent
 from refabric.context_managers import silent, sudo
 from refabric.operations import run
+from refabric.utils import info
 
 
 def chmod(location, mode=None, owner=None, group=None, recursive=False):
@@ -104,8 +107,10 @@ def command_exists(*command):
 
 
 def get_user(name):
-    d = run("cat /etc/passwd | egrep '^%s:' ; true" % name)
-    s = run("cat /etc/shadow | egrep '^%s:' | awk -F':' '{print $2}'" % name)
+    with silent():
+        d = run("cat /etc/passwd | egrep '^%s:' ; true" % name, user='root')
+        s = run("cat /etc/shadow | egrep '^%s:' | awk -F':' '{print $2}'" % name, user='root')
+
     results = {}
     if d:
         d = d.split(':')
@@ -204,3 +209,21 @@ def chpasswd(name, passwd, encrypted_passwd=False):
         encoded_password = base64.b64encode('%s:%s' % (name, passwd))
         encryption = ' -e' if encrypted_passwd else ''
         run('echo %s | base64 --decode | chpasswd%s' % encoded_password, encryption)
+
+
+def pwd():
+    with silent():
+        return run('pwd').stdout.strip()
+
+
+def service(name, action):
+    c = fabric.context_managers
+    with c.settings(c.hide('running', 'stdout', 'stderr'), warn_only=True):
+        info('Service: {} {}', name, action)
+
+        output = run('service {} status'.format(name))
+        if action in output:
+            puts(indent('...has status {}'.format(magenta(output[len(name)+1:]))))
+        else:
+            run('service {} {}'.format(name, action), use_sudo=True)
+

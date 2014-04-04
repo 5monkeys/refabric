@@ -14,6 +14,17 @@ def bootstrap():
     Add state- and role-tasks, i.e. app@live
     Import blueprint libraries
     """
+    fabric.state.env.update({
+        'user': 'ubuntu',
+        'sudo_user': 'root',
+        'linewise': True,
+        'colorize_errors': True,
+        'skip_unknown_tasks': True,
+        'merge_states': True,
+        'forward_agent': True,
+        'sudo_prefix': "sudo -S -p '%(sudo_prompt)s' SSH_AUTH_SOCK=$SSH_AUTH_SOCK",
+    })
+
     for env_name, env in fabric.state.env.states.items():
         if env_name == 'default':
             continue
