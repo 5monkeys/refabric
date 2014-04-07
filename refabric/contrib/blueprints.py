@@ -5,7 +5,6 @@ from fabric.state import env
 from jinja2 import FileSystemLoader
 from .templates import upload
 from ..context_managers import sudo
-from ..state import resolve
 from ..utils import info
 
 __all__ = ['get']
@@ -20,7 +19,7 @@ class Blueprint(object):
     def __init__(self, blueprint):
         self.blueprint = blueprint
         self.name = blueprint.rsplit('.')[-1]
-        self.settings = partial(resolve, prefix='settings.{}'.format(self.name))
+        self.settings = partial(env.resolve, prefix='settings.{}'.format(self.name))
 
     def get(self, setting):
         return self.settings(setting)
@@ -35,7 +34,6 @@ class Blueprint(object):
         context = context or {}
         context['hosts'] = env.hosts
         context['env'] = env.shell_env
-        # TODO: Resolve all env values
         with sudo('root'):
             upload(template, destination, context=context, user=user, group=group,
                    template_loader=template_loader)
