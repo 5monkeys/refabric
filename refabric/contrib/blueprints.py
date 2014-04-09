@@ -1,8 +1,8 @@
-from functools import partial
+import jinja2
 import importlib
 import os
 from fabric.state import env
-from jinja2 import FileSystemLoader
+from functools import partial
 from .templates import upload
 from ..context_managers import sudo
 from ..utils import info
@@ -21,25 +21,33 @@ class Blueprint(object):
         self.name = blueprint.rsplit('.')[-1]
         self.settings = partial(env.resolve, prefix='settings.{}'.format(self.name))
 
-    def get(self, setting):
-        return self.settings(setting)
+    def get(self, setting, default=None):
+        return self.settings(setting, default=default)
 
-    def get_loader(self):
+    def get_template_loader(self):
         role = env.roles[0] if env.roles else None  # TODO: Is this safe?
         return BlueprintTemplateLoader(self.blueprint, role=role)
 
+    def get_jinja_env(self):
+        return jinja2.Environment(loader=self.get_template_loader())
+
+    def render_template(self, template, context=None):
+        text = self.get_jinja_env().get_template(template).render(**context or {})
+        text = text.encode('utf-8')
+        return text
+
     def upload(self, template, destination, context=None, user=None, group=None):
         info('Uploading templates: {}', template)
-        template_loader = self.get_loader()
+        jinja_env = self.get_jinja_env()
         context = context or {}
         context['hosts'] = env.hosts
         context['env'] = env.shell_env
         with sudo('root'):
-            upload(template, destination, context=context, user=user, group=group,
-                   template_loader=template_loader)
+            return upload(template, destination, context=context, user=user, group=group,
+                          jinja_env=jinja_env)
 
 
-class BlueprintTemplateLoader(FileSystemLoader):
+class BlueprintTemplateLoader(jinja2.FileSystemLoader):
 
     def __init__(self, blueprint, role=None):
         blueprint_name = blueprint.rsplit('.')[-1]

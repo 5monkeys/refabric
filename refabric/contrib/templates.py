@@ -1,11 +1,11 @@
 import os
+import jinja2
 import shutil
 import tempfile
 from fabric.colors import magenta
 from fabric.operations import put
 from fabric.utils import abort, puts, indent
 from functools import partial
-from jinja2 import Environment, TemplateNotFound
 from .debian import chown
 from ..context_managers import silent, abort_on_error
 from ..operations import run
@@ -35,16 +35,16 @@ class FileDescriptor(str):
         return iter(FileDescriptor(os.path.join(self, fd)) for fd in os.listdir(self))
 
 
-def upload(source, destination, context=None, user=None, group=None, template_loader=None):
+def upload(source, destination, context=None, user=None, group=None, jinja_env=None):
     """
 
     """
     tmp_dir = tempfile.mkdtemp()
     try:
-        # Create jinja environment
-        jinja_env = Environment(loader=template_loader)  # TODO: Handle None template_loader
+        # TODO: Handle None template_loader
 
         # Filter wanted templates
+        source = source.lstrip('./')
         templates = jinja_env.loader.list_templates()
         templates = [template for template in templates if template.startswith(source)]
         # No templates is found
@@ -53,17 +53,16 @@ def upload(source, destination, context=None, user=None, group=None, template_lo
             return
 
         for template in templates:
-            if source.endswith(os.path.sep):
-                # Directory tree of templates
-                template_path = template[len(source):]
-                if os.path.sep in template_path:
-                    template_rel_dir = os.path.dirname(template_path)
-                    template_dir = os.path.join(tmp_dir, template_rel_dir)
-                    if not os.path.exists(template_dir):
-                        os.makedirs(template_dir)
+            rel_template_path = template[len(source):]
+            if os.path.sep in rel_template_path:
+                # Create directories for template
+                rel_template_dir = os.path.dirname(rel_template_path)
+                template_dir = os.path.join(tmp_dir, rel_template_dir)
+                if not os.path.exists(template_dir):
+                    os.makedirs(template_dir)
             else:
                 # Single template
-                template_path = os.path.basename(template)
+                rel_template_path = os.path.basename(template)
 
             # Render template
             context = context or {}
@@ -72,7 +71,7 @@ def upload(source, destination, context=None, user=None, group=None, template_lo
             text = text.encode('utf-8')
 
             # Write rendered template to local temp dir
-            rendered_template = os.path.join(tmp_dir, template_path)
+            rendered_template = os.path.join(tmp_dir, rel_template_path)
             with file(rendered_template, 'w+') as f:
                 f.write(text)
                 f.write(os.linesep)  # Add newline at end removed by jinja
@@ -87,7 +86,8 @@ def upload(source, destination, context=None, user=None, group=None, template_lo
                   recursive=True)
 
             # Clean destination
-            destination = destination.rstrip(os.path.sep) + os.path.sep
+            if len(templates) > 1 or templates[0].endswith(os.path.sep):
+                destination = destination.rstrip(os.path.sep) + os.path.sep
 
             # Sync templates from remote temp dir to remote destination
             remote_tmp_dir = os.path.join(remote_tmp_dir, '*')
@@ -99,13 +99,13 @@ def upload(source, destination, context=None, user=None, group=None, template_lo
             updated_files = [line.strip() for line in updated.stdout.split('\n') if line]
             if updated_files:
                 for updated_file in updated_files:
-                    info(indent('Uploaded: {}'), updated_file)
+                    info(indent('Uploaded: {}'), updated_file)  # TODO: Handle renaming
             else:
                 puts(indent('(no changes found)'))
 
             return updated_files
 
-    except TemplateNotFound as e:
+    except jinja2.TemplateNotFound as e:
         abort('Templates not found: "{}"'.format(e))
     finally:
         shutil.rmtree(tmp_dir)
