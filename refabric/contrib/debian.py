@@ -216,14 +216,42 @@ def pwd():
         return run('pwd').stdout.strip()
 
 
-def service(name, action):
+def service(name, action, check_status=True):
     c = fabric.context_managers
-    with c.settings(c.hide('running', 'stdout', 'stderr'), warn_only=True):
+    with c.settings(c.hide('running', 'stdout', 'stderr', 'warnings'), warn_only=True):
         info('Service: {} {}', name, action)
 
-        output = run('service {} status'.format(name))
-        if action in output:
-            puts(indent('...has status {}'.format(magenta(output[len(name)+1:]))))
-        else:
-            run('service {} {}'.format(name, action), use_sudo=True)
+        if check_status:
+            output = run('service {} status'.format(name), use_sudo=True, combine_stderr=True)
+            if output.return_code != 0:
+                puts(indent(magenta(output)))
+                return
+            elif action in output:
+                puts(indent('...has status {}'.format(magenta(output[len(name)+1:]))))
+                return
 
+        output = run('service {} {}'.format(name, action), use_sudo=True, combine_stderr=True)
+        if output.return_code != 0:
+            puts(indent(magenta(output)))
+
+
+def nproc():
+    """
+    Get the number of CPU cores.
+    """
+    c = fabric.context_managers
+    with c.settings(c.hide('running', 'stdout')):
+        res = run('nproc').strip()
+        return int(res)
+
+
+def total_memory():
+    """
+    Return total memory in bytes
+    """
+    c = fabric.context_managers
+    with c.settings(c.hide('running', 'stdout')):
+        memory = int(run("grep MemTotal /proc/meminfo | awk '{print $2}'"))
+        # Convert to bytes
+        memory *= 1024
+        return memory
