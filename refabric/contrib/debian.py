@@ -85,7 +85,7 @@ def dpkg_query(package):
 
 
 def add_apt_repository(repository, accept=True):
-    run('add-apt-repository {} {}'.format(repository, '--yes' if accept else ''))
+    run('add-apt-repository "{}" {}'.format(repository, '--yes' if accept else ''))
 
 
 def add_apt_key(url):
@@ -247,7 +247,7 @@ def nproc():
 
 def total_memory():
     """
-    Return total memory in bytes
+    Get total memory in bytes
     """
     c = fabric.context_managers
     with c.settings(c.hide('running', 'stdout')):
@@ -255,3 +255,21 @@ def total_memory():
         # Convert to bytes
         memory *= 1024
         return memory
+
+
+def page_size():
+    """
+    Get PAGE_SIZE
+    """
+    c = fabric.context_managers
+    with c.settings(c.hide('running', 'stdout')):
+        return int(run('getconf PAGE_SIZE').strip())
+
+
+def phys_pages():
+    """
+    Get _PHYS_PAGES
+    """
+    c = fabric.context_managers
+    with c.settings(c.hide('running', 'stdout')):
+        return int(run('getconf _PHYS_PAGES').strip())

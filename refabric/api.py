@@ -22,7 +22,7 @@ def bootstrap():
         'skip_unknown_tasks': True,
         'merge_states': True,
         'forward_agent': True,
-        'sudo_prefix': "sudo -S -p '%(sudo_prompt)s' SSH_AUTH_SOCK=$SSH_AUTH_SOCK",
+        'sudo_prefix': "sudo -S -p -E '%(sudo_prompt)s' SSH_AUTH_SOCK=$SSH_AUTH_SOCK",
     })
 
     for env_name, env in fabric.state.env.states.items():
