@@ -1,4 +1,3 @@
-from functools import partial
 import fabric.state
 from fabric.main import load_tasks_from_module, _task_names
 from re import compile
