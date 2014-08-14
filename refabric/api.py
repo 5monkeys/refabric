@@ -23,6 +23,7 @@ def bootstrap():
         'colorize_errors': True,
         'skip_unknown_tasks': True,
         'merge_states': True,
+        'prompt_hosts': True,
         'forward_agent': True,
         'sudo_prefix': "sudo -S -E -p '%(sudo_prompt)s' SSH_AUTH_SOCK=$SSH_AUTH_SOCK",
     })
