@@ -5,8 +5,10 @@ from fabric.decorators import task
 
 from .state import load_blueprints
 from .tasks import dispatch
+from .operations import run
+from .utils import info
 
-__all__ = ['bootstrap']
+__all__ = ['bootstrap', 'run', 'info']
 
 
 def bootstrap():
