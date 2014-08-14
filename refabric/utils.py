@@ -1,7 +1,7 @@
-from fabric.utils import warn, abort, puts
-from refabric.colors import yellow, green
+from fabric.utils import puts
+from .colors import yellow, green
 
-__all__ = ['warn', 'abort', 'info']
+__all__ = ['info']
 
 
 def info(text, *args, **kwargs):
