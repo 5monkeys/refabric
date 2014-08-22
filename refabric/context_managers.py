@@ -1,5 +1,6 @@
 # coding=utf-8
 from contextlib import contextmanager
+
 from fabric.context_managers import settings, hide, prefix
 from fabric.state import env
 

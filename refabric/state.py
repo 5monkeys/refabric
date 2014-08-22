@@ -1,6 +1,7 @@
+from re import compile
+
 import fabric.state
 from fabric.main import load_tasks_from_module, _task_names
-from re import compile
 
 
 VAR_PATTERN = compile('\$\((.+?)\)')

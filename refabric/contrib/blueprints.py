@@ -1,8 +1,10 @@
 import jinja2
 import importlib
 import os
-from fabric.state import env
 from functools import partial
+
+from fabric.state import env
+
 from .templates import upload
 from ..context_managers import sudo
 from ..utils import info

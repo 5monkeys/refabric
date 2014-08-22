@@ -2,10 +2,12 @@ import os
 import jinja2
 import shutil
 import tempfile
+from functools import partial
+
 from fabric.colors import magenta
 from fabric.operations import put
 from fabric.utils import abort, puts, indent
-from functools import partial
+
 from .debian import chown
 from ..context_managers import silent, abort_on_error
 from ..operations import run

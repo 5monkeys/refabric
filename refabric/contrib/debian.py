@@ -1,14 +1,16 @@
 import base64
+
 import fabric.api
-from fabric.colors import magenta
 import fabric.operations
 import fabric.contrib.files
 import fabric.contrib.project
 import fabric.context_managers
+from fabric.colors import magenta
 from fabric.utils import puts, indent
-from refabric.context_managers import silent, sudo
-from refabric.operations import run
-from refabric.utils import info
+
+from ..context_managers import silent, sudo
+from ..operations import run
+from ..utils import info
 
 
 def chmod(location, mode=None, owner=None, group=None, recursive=False):
