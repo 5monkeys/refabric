@@ -1,6 +1,6 @@
 import fabric.state
 from fabric.tasks import execute
-from fabric.utils import warn
+from fabric.utils import warn, abort
 
 from .state import blueprints, load_blueprints
 
@@ -21,14 +21,16 @@ def dispatch(env_name, *args, **kwargs):
     else:
         # Apply role settings
         for _role in _roles:
-            roledefs = fabric.state.env.roledefs.get(_role, {})
-            assert isinstance(roledefs, dict), 'Roledefs must be dict style objects'
+            definitions = fabric.state.env.roledefs.get(_role, {})
+
+            # Ensure dict style role definitions
+            if not isinstance(definitions, dict):
+                abort('Roledefs must be dict style objects')
+
             if fabric.state.env.merge_states:
-                fabric.state.env.merge(roledefs)
+                fabric.state.env.merge(definitions)
             else:
-                fabric.state.env.update(roledefs)
-            #merge_dicts(fabric.state.env, roledefs)
-            #fabric.state.env.update(roledefs)
+                fabric.state.env.update(definitions)
 
     # Activate role(s)
     fabric.state.env.roles = _roles
