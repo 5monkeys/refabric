@@ -237,6 +237,20 @@ def service(name, action, check_status=True):
             puts(indent(magenta(output)))
 
 
+def update_rc(basename, priorities, force=False):
+    run('update-rc.d {} {} {}'.format('-f' if force else '',
+                                      basename,
+                                      priorities), pty=False, use_sudo=True)
+
+
+def add_rc_service(name, priorities='defaults'):
+    update_rc(name, priorities)
+
+
+def remove_rc_service(name):
+    update_rc(name, priorities='remove', force=True)
+
+
 def nproc():
     """
     Get the number of CPU cores.
