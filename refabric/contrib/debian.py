@@ -10,7 +10,7 @@ from fabric.utils import puts, indent
 
 from ..context_managers import silent, sudo
 from ..operations import run
-from ..utils import info
+from refabric.utils import info
 
 
 def chmod(location, mode=None, owner=None, group=None, recursive=False):
