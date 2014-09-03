@@ -13,6 +13,7 @@ def dispatch(env_name, *args, **kwargs):
     _roles = kwargs.pop('roles', None)
 
     # Switch env
+    # TODO: Don't switch env here, wrap task-loop to ensure roledefs/blueprints per task
     fabric.state.switch_env(env_name)
 
     # Use all roles from roledefs in given env, if not passed as kwarg
@@ -38,13 +39,13 @@ def dispatch(env_name, *args, **kwargs):
     # Load (new) blueprints from given env
     load_blueprints()
 
-    # Dispatch task arguments as task forwards
+    # Dispatch task arguments as task forwards; role@env:blueprint.task -> role@env blueprint.task
     for _task in _tasks:
         if '.' in _task:
-            # Execute specific task
+            # Execute specific task, i.e. :blueprint.task
             execute(_task)
         else:
-            # Execute task on all blueprints
+            # Execute task on all blueprints, i.e. :task -> a.task, b.task, c.task
             for blueprint, executables in blueprints.items():
                 executable = executables.get(_task)
                 if executable:

@@ -18,6 +18,7 @@ def run(command, shell=True, pty=True, combine_stderr=None, use_sudo=False, user
 
         if user == env.user:
             user = None
+
         return fabric_sudo(command, shell=shell, pty=pty, combine_stderr=combine_stderr, user=user)
 
 
