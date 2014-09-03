@@ -227,11 +227,11 @@ def pwd():
 
 def service(name, action, check_status=True):
     c = fabric.context_managers
-    with c.settings(c.hide('running', 'stdout', 'stderr', 'warnings'), warn_only=True):
+    with sudo('root'), c.settings(c.hide('running', 'stdout', 'stderr', 'warnings'), warn_only=True):
         info('Service: {} {}', name, action)
 
         if check_status:
-            output = run('service {} status'.format(name), pty=False, use_sudo=True, combine_stderr=True)
+            output = run('service {} status'.format(name), pty=False, combine_stderr=True)
             if output.return_code != 0:
                 puts(indent(magenta(output)))
                 return
@@ -239,7 +239,7 @@ def service(name, action, check_status=True):
                 puts(indent('...has status {}'.format(magenta(output[len(name)+1:]))))
                 return
 
-        output = run('service {} {}'.format(name, action), pty=False, use_sudo=True, combine_stderr=True)
+        output = run('service {} {}'.format(name, action), pty=False, combine_stderr=True)
         if output.return_code != 0:
             puts(indent(magenta(output)))
 
