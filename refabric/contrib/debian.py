@@ -86,8 +86,15 @@ def dpkg_query(package):
     return 'not-installed' not in status and 'installed' in status
 
 
-def add_apt_repository(repository, accept=True):
-    run('add-apt-repository "{}" {}'.format(repository, '--yes' if accept else ''))
+def add_apt_repository(repository, accept=True, src=False):
+    if src:
+        run('add-apt-repository "{}" {}'.format(repository, '--yes' if accept else ''))
+    else:
+        # Add repository manually to sources.list due to ubuntu bug
+        if not repository.startswith('deb '):
+            repository = 'deb {}'.format(repository)
+        fabric.contrib.files.append('/etc/apt/sources.list', repository, shell=True)
+
 
 
 def add_apt_key(url):
