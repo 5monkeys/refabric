@@ -24,6 +24,9 @@ class Blueprint(object):
         self.name = blueprint.rsplit('.')[-1]
         self.settings = partial(env.resolve, prefix='settings.{}'.format(self.name))
 
+    def __contains__(self, item):
+        return bool(self.settings(item))
+
     def get(self, setting, default=None):
         return self.settings(setting, default=default)
 
