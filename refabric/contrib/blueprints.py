@@ -41,9 +41,14 @@ class Blueprint(object):
         path.append(relative_path)
         return os.path.join(*path)
 
+    def get_default_template_root(self):
+        module = importlib.import_module(self.blueprint)
+        blueprint_library_path = os.path.dirname(module.__file__)
+        return os.path.join(blueprint_library_path, 'templates', self.name)
+
     def get_template_loader(self):
         role = env.roles[0] if env.roles else None  # TODO: Is this safe?
-        return BlueprintTemplateLoader(self.blueprint, role=role)
+        return BlueprintTemplateLoader(self, role=role)
 
     def get_jinja_env(self):
         return jinja2.Environment(loader=self.get_template_loader())
@@ -82,16 +87,21 @@ class Blueprint(object):
 class BlueprintTemplateLoader(jinja2.FileSystemLoader):
 
     def __init__(self, blueprint, role=None):
-        blueprint_name = blueprint.rsplit('.')[-1]
-        module = importlib.import_module(blueprint)
-        blueprint_library_path = os.path.dirname(module.__file__)
-        library_templates = os.path.join(blueprint_library_path, 'templates', blueprint_name)
+        # Blueprint default templates
+        library_templates = blueprint.get_default_template_root()
 
+        # Local user templates
         deploy_root = env['real_fabfile']
         dirs = [os.path.dirname(deploy_root), 'templates']
         if role:
             dirs.append(role)
-        dirs.append(blueprint_name)
+        dirs.append(blueprint.name)
         user_templates = os.path.join(*dirs)
 
-        super(BlueprintTemplateLoader, self).__init__([user_templates, library_templates])
+        # Optional extra templates
+        env_templates = env.get('template_dirs', '')
+
+        templates = [user_templates, library_templates]
+        templates.extend(env_templates)
+
+        super(BlueprintTemplateLoader, self).__init__(templates)
