@@ -30,7 +30,7 @@ class Blueprint(object):
     def get(self, setting, default=None):
         return self.settings(setting, default=default)
 
-    def get_template_path(self, relative_path, role=None):
+    def get_user_template_path(self, relative_path, role=None):
         deploy_root = env['real_fabfile']
         path = [os.path.dirname(deploy_root), 'templates']
         if not role:
@@ -67,7 +67,7 @@ class Blueprint(object):
         """
         Currently only supports downloading single file
         """
-        destination_path = self.get_template_path(rel_destination_path)
+        destination_path = self.get_user_template_path(rel_destination_path, role=role)
 
         # Append filename to destination if missing
         filename = os.path.basename(remote_path)
