@@ -6,7 +6,7 @@ from functools import partial
 
 from fabric.colors import magenta
 from fabric.operations import put
-from fabric.utils import abort, puts, indent
+from fabric.utils import abort, puts, indent, warn
 
 from .debian import chown
 from ..context_managers import silent, abort_on_error
@@ -69,14 +69,18 @@ def upload(source, destination, context=None, user=None, group=None, jinja_env=N
             # Render template
             context = context or {}
             context['n'] = os.path.splitext(os.path.basename(template))[0]
-            text = jinja_env.get_template(template).render(**context or {})
-            text = text.encode('utf-8')
+            try:
+                text = jinja_env.get_template(template).render(**context or {})
+                text = text.encode('utf-8')
 
-            # Write rendered template to local temp dir
-            rendered_template = os.path.join(tmp_dir, rel_template_path)
-            with file(rendered_template, 'w+') as f:
-                f.write(text)
-                f.write(os.linesep)  # Add newline at end removed by jinja
+                # Write rendered template to local temp dir
+                rendered_template = os.path.join(tmp_dir, rel_template_path)
+                with file(rendered_template, 'w+') as f:
+                    f.write(text)
+                    f.write(os.linesep)  # Add newline at end removed by jinja
+
+            except UnicodeDecodeError:
+                warn('Failed to render template "{}"'.format(template))
 
         with silent(), abort_on_error():
             # Upload rendered templates to remote temp dir
