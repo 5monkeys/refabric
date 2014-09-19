@@ -62,6 +62,7 @@ class Blueprint(object):
         info('Uploading templates: {}', template)
         jinja_env = self.get_jinja_env()
         context = context or {}
+        context.setdefault('host', env.host_string)
         context['hosts'] = env.hosts
         context['env'] = env.shell_env
         with sudo('root'):
