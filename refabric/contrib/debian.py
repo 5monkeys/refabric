@@ -138,7 +138,7 @@ def get_group(name):
     group_data = run("cat /etc/group | egrep '^%s:' ; true" % name)
     if group_data:
         name, _, gid, members = group_data.split(':', 4)
-        return dict(name=name, gid=gid, members=tuple(m.strip() for m in members.split(',')))
+        return dict(name=name, gid=gid, members=tuple(m.strip() for m in members.split(',') if m.strip()))
     else:
         return None
 
