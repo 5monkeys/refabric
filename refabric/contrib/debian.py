@@ -96,17 +96,16 @@ def add_apt_repository(repository, accept=True, src=False):
         fabric.contrib.files.append('/etc/apt/sources.list', repository, shell=True)
 
 
-
 def add_apt_key(url):
     run('wget -O - {url} | apt-key add -'.format(url=url))
 
 
-def add_apt_ppa(name, accept=True):
+def add_apt_ppa(name, accept=True, src=False):
     with sudo(), fabric.context_managers.cd('/etc/apt/sources.list.d'):
         source_list = '%s-%s.list' % (name.replace('/', '-'), lbs_codename())
 
         if not fabric.contrib.files.exists(source_list):
-            add_apt_repository('ppa:{}'.format(name), accept=accept)
+            add_apt_repository('ppa:{}'.format(name), accept=accept, src=src)
             apt_get('update')
 
 
