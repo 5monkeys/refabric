@@ -19,7 +19,6 @@ def bootstrap():
     fabric.state.env.update({
         'user': 'ubuntu',
         'sudo_user': 'root',
-        'linewise': True,
         'colorize_errors': True,
         'skip_unknown_tasks': True,
         'merge_states': True,
