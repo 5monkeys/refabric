@@ -65,6 +65,7 @@ class Blueprint(object):
         context.setdefault('host', env.host_string)
         context['hosts'] = env.hosts
         context['env'] = env.shell_env
+        context['settings'] = self.get(None)
         with sudo('root'):
             return upload(template, destination, context=context, user=user, group=group,
                           jinja_env=jinja_env)
