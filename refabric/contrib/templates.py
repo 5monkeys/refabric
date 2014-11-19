@@ -8,7 +8,6 @@ from fabric.colors import magenta
 from fabric.operations import put
 from fabric.utils import abort, puts, indent, warn
 
-from .debian import chown
 from ..context_managers import silent, abort_on_error
 from ..operations import run
 from ..utils import info
@@ -49,8 +48,9 @@ def upload(source, destination, context=None, user=None, group=None, jinja_env=N
         source = source.lstrip('./')
         templates = jinja_env.loader.list_templates()
         templates = [template for template in templates if template.startswith(source)]
-        # No templates is found
+
         if not templates:
+            # No templates is found
             puts(indent(magenta('No templates found')))
             return
 
@@ -88,8 +88,10 @@ def upload(source, destination, context=None, user=None, group=None, jinja_env=N
             put(os.path.join(tmp_dir, '*'), remote_tmp_dir, use_sudo=True)
 
             # Set given permissions on remote before sync
-            chown(remote_tmp_dir, owner=user or 'root', group=group or user or 'root',
-                  recursive=True)
+            group = group or user or 'root'
+            owner = user or 'root'
+            owner = '{}:{}'.format(owner, group) if group else owner
+            run('chown -R {} "{}"'.format(owner, remote_tmp_dir))
 
             # Clean destination
             if len(templates) > 1 or templates[0].endswith(os.path.sep):
