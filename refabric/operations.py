@@ -3,6 +3,8 @@ from fabric.state import env
 
 from .context_managers import silent
 
+__all__ = ['run']
+
 
 def run(command, shell=True, pty=True, combine_stderr=None, use_sudo=False, user=None):
     use_sudo = use_sudo or user is not None or env.get('use_sudo')

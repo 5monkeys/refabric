@@ -1,46 +1,29 @@
 import fabric.state
 from fabric.tasks import execute
-from fabric.utils import warn, abort
+from fabric.utils import warn
 
 from .state import blueprints, load_blueprints
 
 
-def dispatch(env_name, *args, **kwargs):
+def dispatch(env_name, role, *args):
     """
-    Activate env, set role(s) and dispatch tasks
+    Activate env, set role and dispatch tasks
     """
-    _tasks = args
-    _roles = kwargs.pop('roles', None)
+    # Activate role
+    fabric.state.env.roles = [role]
 
     # Switch env
     # TODO: Don't switch env here, wrap task-loop to ensure roledefs/blueprints per task
     fabric.state.switch_env(env_name)
 
-    # Use all roles from roledefs in given env, if not passed as kwarg
-    if _roles is None:
-        _roles = fabric.state.env.get('roledefs', {}).keys()
-    else:
-        # Apply role settings
-        for _role in _roles:
-            definitions = fabric.state.env.roledefs.get(_role, {})
-
-            # Ensure dict style role definitions
-            if not isinstance(definitions, dict):
-                abort('Roledefs must be dict style objects')
-
-            if fabric.state.env.merge_states:
-                fabric.state.env.merge(definitions)
-            else:
-                fabric.state.env.update(definitions)
-
-    # Activate role(s)
-    fabric.state.env.roles = _roles
+    # Re-activate role if unintended set when merging env state or role definition
+    fabric.state.env.roles = [role]
 
     # Load (new) blueprints from given env
     load_blueprints()
 
     # Dispatch task arguments as task forwards; role@env:blueprint.task -> role@env blueprint.task
-    for _task in _tasks:
+    for _task in args:
         if '.' in _task:
             # Execute specific task, i.e. :blueprint.task
             execute(_task)
