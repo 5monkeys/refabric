@@ -31,13 +31,6 @@ def bootstrap():
         if env_name == 'default':
             continue
 
-        task_name = '@{env}'.format(env=env_name)
-        state_task = partial(dispatch, env_name)
-        docstring = 'switch to configured Fab env "{env}"'.format(env=env_name)
-
-        state_task.__doc__ = docstring
-        fabric.state.commands[task_name] = task(state_task)
-
         roledefs = env.get('roledefs')
         if roledefs:
             for role_name in roledefs.keys():
