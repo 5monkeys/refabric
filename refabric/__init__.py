@@ -1,4 +1,4 @@
-from .api import *
+from .bootstrap import *
 
 VERSION = (1, 0, 0, 'final', 0)
 
