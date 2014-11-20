@@ -19,7 +19,6 @@ def load_blueprints(packages=None):
     # Fallback on blueprints from env
     packages = packages or fabric.state.env.get('blueprints') or []
 
-    #with python_path():
     for package in packages:
         # Import blueprint module
         package = str(package)
@@ -32,7 +31,7 @@ def load_blueprints(packages=None):
 
         if tasks:
             # Prefix top level imports with module/blueprint name
-            if not package:
+            if not '.' in package:
                 tasks = {blueprint: tasks}
 
             callables.update(tasks)
