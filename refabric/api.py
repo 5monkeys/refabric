@@ -1,12 +1,5 @@
 from functools import partial
 
-import fabric.state
-from fabric.decorators import task
-
-from .state import load_blueprints, apply_role_definitions
-from .tasks import dispatch
-from .operations import run
-from .utils import info
 
 __all__ = ['bootstrap', 'run', 'info']
 
@@ -16,6 +9,14 @@ def bootstrap():
     Add state- and role-tasks, i.e. app@live
     Import blueprint libraries
     """
+    import fabric.state
+    from fabric.decorators import task
+
+    from .state import load_blueprints, apply_role_definitions
+    from .tasks import dispatch
+    from .operations import run
+    from .utils import info
+
     fabric.state.env.update({
         'user': 'ubuntu',
         'sudo_user': 'root',
