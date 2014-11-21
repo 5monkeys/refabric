@@ -12,7 +12,7 @@ def bootstrap():
     from fabric.decorators import task
 
     from .state import load_blueprints, apply_role_definitions
-    from .tasks import dispatch
+    from .tasks import dispatch, help_task
 
     fabric.state.env.update({
         'user': 'ubuntu',
@@ -38,6 +38,9 @@ def bootstrap():
                             'and use role "{role}"'.format(env=env_name, role=role_name)
                 state_task.__doc__ = docstring
                 fabric.state.commands[task_name] = task(state_task)
+
+    # Create global help task
+    fabric.state.commands['help'] = task(help_task)
 
     # Apply
     if fabric.state.env.roles:

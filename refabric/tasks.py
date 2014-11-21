@@ -1,6 +1,6 @@
 import fabric.state
 from fabric.tasks import execute
-from fabric.utils import warn
+from fabric.utils import warn, abort
 
 from .state import blueprints, load_blueprints
 
@@ -36,3 +36,19 @@ def dispatch(env_name, role, *args):
                 else:
                     warn('Task "{task}" not part of blueprint "{blueprint}"'.format(task=_task,
                                                                                     blueprint=blueprint))
+
+
+def help_task(blueprint_name=None):
+    """
+    Display blueprint help
+
+    :param blueprint_name: Blueprint name
+    """
+    if not blueprint_name:
+        abort('No blueprint provided, example> fab help:python')
+
+    blueprint = blueprints.get(blueprint_name)
+    if not blueprint:
+        abort('Unknown blueprint "{}", using correct role?'.format(blueprint_name))
+
+    help(blueprint['__module__'])

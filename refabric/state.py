@@ -37,6 +37,8 @@ def load_blueprints(packages=None):
             callables.update(tasks)
             executables[blueprint] = dict((name.split('.', 1)[-1], name) for name in _task_names(tasks))
 
+        executables[blueprint]['__module__'] = __import__(package, fromlist=[package])
+
     # Update available tasks for fabric
     fabric.state.commands.update(callables)
 
