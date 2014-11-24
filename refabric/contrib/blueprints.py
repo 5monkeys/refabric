@@ -59,12 +59,6 @@ class Blueprint(object):
         return text
 
     def upload(self, template, destination, context=None, user=None, group=None):
-        from_name = os.path.basename(template.rstrip(os.path.sep))
-        to_name = os.path.basename(destination.rstrip(os.path.sep))
-        if to_name != from_name:
-            info('Uploading templates: {} to {}', template, to_name)
-        else:
-            info('Uploading templates: {}', template)
         jinja_env = self.get_jinja_env()
         context = context or {}
         context.setdefault('host', env.host_string)
