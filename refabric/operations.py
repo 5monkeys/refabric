@@ -1,4 +1,3 @@
-import fabric.api
 from fabric.state import env
 
 from .context_managers import silent
@@ -25,6 +24,10 @@ def run(command, shell=True, pty=True, combine_stderr=None, use_sudo=False, user
 
 
 ### Monkey patch fabric
+import fabric.api
+import fabric.operations
+import fabric.contrib.files
+import fabric.contrib.project
 fabric_run = fabric.api.run
 fabric_sudo = fabric.api.sudo
 for m in (fabric.api, fabric.operations, fabric.contrib.files, fabric.contrib.project):
