@@ -3,6 +3,7 @@ from fabric.tasks import execute
 from fabric.utils import warn, abort
 
 from .state import blueprints, load_blueprints
+from .utils import info
 
 
 def dispatch(env_name, role, *args):
@@ -45,10 +46,27 @@ def help_task(blueprint_name=None):
     :param blueprint_name: Blueprint name
     """
     if not blueprint_name:
-        abort('No blueprint provided, example> fab help:python')
+        abort('No blueprint provided, example: $ fab help:python')
 
     blueprint = blueprints.get(blueprint_name)
     if not blueprint:
         abort('Unknown blueprint "{}", using correct role?'.format(blueprint_name))
 
     help(blueprint['__module__'])
+
+
+def init_task(blueprint_name=None):
+    if not blueprint_name:
+        abort('No blueprint provided, example: $ fab init:memcached')
+
+    blueprint = blueprints.get(blueprint_name)
+    if not blueprint:
+        abort('Unknown blueprint "{}", using correct role?'.format(blueprint_name))
+
+    module = blueprint['__module__']
+    if hasattr(module, 'blueprint'):
+        module.blueprint.inherit_templates()
+
+    if module.__doc__:
+        info('Help: {}', module.blueprint.name)
+        print module.__doc__

@@ -12,7 +12,7 @@ def bootstrap():
     from fabric.decorators import task
 
     from .state import load_blueprints, apply_role_definitions
-    from .tasks import dispatch, help_task
+    from .tasks import dispatch, help_task, init_task
 
     fabric.state.env.update({
         'user': 'ubuntu',
@@ -39,8 +39,9 @@ def bootstrap():
                 state_task.__doc__ = docstring
                 fabric.state.commands[task_name] = task(state_task)
 
-    # Create global help task
+    # Create global blueprint tasks
     fabric.state.commands['help'] = task(help_task)
+    fabric.state.commands['init'] = task(init_task)
 
     # Apply
     if fabric.state.env.roles:
