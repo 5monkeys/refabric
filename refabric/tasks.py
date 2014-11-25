@@ -56,6 +56,11 @@ def help_task(blueprint_name=None):
 
 
 def init_task(blueprint_name=None):
+    """
+    Copy template structure from blueprint defaults.
+
+    :param blueprint_name: Blueprint name
+    """
     if not blueprint_name:
         abort('No blueprint provided, example: $ fab init:memcached')
 

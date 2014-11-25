@@ -114,6 +114,9 @@ class Blueprint(object):
                         with hide_prefix():
                             info(diff)
                 else:
+                    clone_destination = os.path.join(destination, rel_dir)
+                    if not os.path.exists(clone_destination):
+                        os.makedirs(clone_destination)
                     shutil.copyfile(origin, clone)
 
 
