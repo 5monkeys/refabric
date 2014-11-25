@@ -13,7 +13,7 @@ def sudo(user=None):
         yield
 
 
-silent = lambda: settings(hide('commands'), warn_only=True)
+silent = lambda *h: settings(hide('commands', *h), warn_only=True)
 hide_prefix = lambda: settings(output_prefix=False)
 abort_on_error = lambda: settings(warn_only=False)
 
