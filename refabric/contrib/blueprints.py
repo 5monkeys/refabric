@@ -1,13 +1,16 @@
+import shutil
 import jinja2
 import importlib
 import os
 from functools import partial
 
+from fabric.api import local
 from fabric.contrib import files
 from fabric.state import env
+from fabric.utils import warn
 
 from .templates import upload
-from ..context_managers import sudo
+from ..context_managers import sudo, silent, hide_prefix
 from ..utils import info
 
 __all__ = ['get']
@@ -30,7 +33,7 @@ class Blueprint(object):
     def get(self, setting, default=None):
         return self.settings(setting, default=default)
 
-    def get_user_template_path(self, relative_path, role=None):
+    def get_user_template_path(self, relative_path='', role=None):
         deploy_root = env['real_fabfile']
         path = [os.path.dirname(deploy_root), 'templates']
         if not role:
@@ -44,7 +47,7 @@ class Blueprint(object):
     def get_default_template_root(self):
         module = importlib.import_module(self.blueprint)
         blueprint_library_path = os.path.dirname(module.__file__)
-        return os.path.join(blueprint_library_path, 'templates', self.name)
+        return os.path.join(blueprint_library_path, 'templates', self.name, '')
 
     def get_template_loader(self):
         role = env.roles[0] if env.roles else None  # TODO: Is this safe?
@@ -83,6 +86,35 @@ class Blueprint(object):
         with sudo('root'):
             info('Downloading {} -> {}', remote_path, destination_path)
             files.get(remote_path, destination_path)
+
+    def inherit_templates(self, role=None):
+        """
+        Copy blueprint default templates to local working directory.
+        If active role is present, a local top-level role directory will be created.
+
+        Already existing templates that differs with default template will be skipped and a diff will be printed.
+
+        :param role: Optional local role directory to output templates to.
+        """
+        source = self.get_default_template_root()
+        destination = self.get_user_template_path(role=role)
+
+        info('Inheriting blueprint templates...')
+        for directory, _, templates in os.walk(source):
+            rel_dir = directory[len(source):]
+            for template in templates:
+                origin = os.path.join(directory, template)
+                template = os.path.join(rel_dir, template)
+                clone = os.path.join(destination, template)
+                if os.path.exists(clone):
+                    with silent('warnings'):
+                        diff = local('diff {} {}'.format(clone, origin), capture=True)
+                    if diff.failed:
+                        warn('DIFF > Skipping template: {}'.format(template))
+                        with hide_prefix():
+                            info(diff)
+                else:
+                    shutil.copyfile(origin, clone)
 
 
 class BlueprintTemplateLoader(jinja2.FileSystemLoader):
