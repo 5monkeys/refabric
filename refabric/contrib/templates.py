@@ -116,26 +116,33 @@ def upload(source, destination, context=None, user=None, group=None, jinja_env=N
         with silent(), abort_on_error():
             # Upload rendered templates to remote temp dir
             remote_tmp_dir = run('mktemp -d').stdout
-            put(os.path.join(tmp_dir, '*'), remote_tmp_dir, use_sudo=True)
+            run('chmod -R 777 {}'.format(remote_tmp_dir))
+            try:
+                put(os.path.join(tmp_dir, '*'), remote_tmp_dir, use_sudo=True)
 
-            # Set given permissions on remote before sync
-            group = group or user or 'root'
-            owner = user or 'root'
-            owner = '{}:{}'.format(owner, group) if group else owner
-            run('chown -R {} "{}"'.format(owner, remote_tmp_dir))
+                # Set given permissions on remote before sync
+                group = group or user or 'root'
+                owner = user or 'root'
+                owner = '{}:{}'.format(owner, group) if group else owner
+                run('chown -R {} "{}"'.format(owner, remote_tmp_dir))
 
-            # Clean destination
-            if len(templates) > 1 or templates[0].endswith(os.path.sep):
-                destination = destination.rstrip(os.path.sep) + os.path.sep
+                # Clean destination
+                if len(templates) > 1 or templates[0].endswith(os.path.sep):
+                    destination = destination.rstrip(os.path.sep) + os.path.sep
 
-            # Sync templates from remote temp dir to remote destination
-            remote_tmp_dir = os.path.join(remote_tmp_dir, '*')
-            cmd = 'rsync -rcbi --out-format="%n" {tmp_dir} {dest} && rm -r {tmp_dir}'.format(
-                tmp_dir=remote_tmp_dir,
-                dest=destination)
-            updated = run(cmd)
+                # Sync templates from remote temp dir to remote destination
+                remote_tmp_dir = os.path.join(remote_tmp_dir, '*')
+                cmd = 'rsync -rcbiog --out-format="%n" {tmp_dir} {dest}'.format(
+                    tmp_dir=remote_tmp_dir,
+                    dest=destination)
+                updated = run(cmd)
+
+            finally:
+                # Remove temp upload dir after sync to final destination
+                run('rm -rf {}'.format(remote_tmp_dir))
 
             updated_files = [line.strip() for line in updated.stdout.split('\n') if line]
+            updated_files = filter(lambda f: os.path.isfile(os.path.join(tmp_dir, f)), updated_files)
             if updated_files:
                 for updated_file in updated_files:
                     updated_file_path = destination
