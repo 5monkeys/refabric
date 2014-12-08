@@ -41,26 +41,31 @@ def patch(original_path, patch_path=None, keep=True):
     original_package, original_func_name = original_path.rsplit('.', 1)
     original_module = __import__(original_package, fromlist=['*'])
     original_func = getattr(original_module, original_func_name)
+
     if method:
+        original_module = original_func
         original_func = getattr(original_func, method)
+        original_func_name = method
 
     if not patch_path:
         patch_path = '.'.join(('refabric', original_path.split('.', 1)[1]))
+
     patch_package, patch_func_name = patch_path.rsplit('.', 1)
     patch_module = __import__(patch_package, fromlist=['*'])
     patch_func = getattr(patch_module, patch_func_name)
 
     if keep:
         patch_func.original = original_func
+
     setattr(original_module, original_func_name, patch_func)
 
 
 # Monkey patch fabric
-patch('fabric.state.switch_env')
 patch('fabric.tasks._execute')
-patch('fabric.utils._AttributeDict:__setitem__', 'refabric.utils.env_setitem', keep=False)
+patch('fabric.state.switch_env')
 patch('fabric.operations.run')
 patch('fabric.operations.sudo', 'refabric.operations.run')
+patch('fabric.utils._AttributeDict:__setitem__', 'refabric.utils.env_setitem', keep=False)
 
 
 # Reload fabric's run/sudo import references to patched version
