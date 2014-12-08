@@ -1,4 +1,4 @@
-from fabric.utils import puts
+from fabric.utils import puts, _AttributeDict
 
 from .colors import green, yellow
 
@@ -15,3 +15,15 @@ def info(text, *args, **kwargs):
         text = text.format(*args, **kwargs)
 
         puts(text)
+
+
+def env_setitem(self, key, value):
+    """
+    Patched version of fabric.utils._AttributeDict.__setitem__.
+    Catch set of `roles` and apply definitions into env.
+    """
+    super(_AttributeDict, self).__setitem__(key, value)
+
+    if key == 'roles' and value:
+        from refabric.state import apply_role_definitions
+        apply_role_definitions(value[0])
