@@ -1,6 +1,4 @@
-from copy import copy
 from re import compile
-from fabric.context_managers import settings
 
 import fabric.state
 from fabric.main import load_tasks_from_module, _task_names
