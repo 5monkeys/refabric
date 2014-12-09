@@ -1,4 +1,5 @@
-from fabric.utils import puts, _AttributeDict
+import re
+from fabric.utils import puts
 
 from .colors import green, yellow
 
@@ -17,13 +18,77 @@ def info(text, *args, **kwargs):
         puts(text)
 
 
-def env_setitem(self, key, value):
+class _AttributeDict(object):
     """
-    Patched version of fabric.utils._AttributeDict.__setitem__.
-    Catch set of `roles` and apply definitions into env.
+    Patched version (mixin) of fabric.utils._AttributeDict.
     """
-    super(_AttributeDict, self).__setitem__(key, value)
 
-    if key == 'roles' and value:
-        from refabric.state import apply_role_definitions
-        apply_role_definitions(value[0])
+    @staticmethod
+    def __setitem__(self, key, value):
+        """
+        Catch set of key `roles` and apply related definitions into env.
+        """
+        _AttributeDict.__setitem__.original(self, key, value)
+
+        if key == 'roles' and value:
+            from refabric.state import apply_role_definitions
+            apply_role_definitions(value[0])
+
+    @staticmethod
+    def resolve(self, path=None, prefix=None, default=None):
+        """
+        Path lookup helper with deep dot notation, parent fallback and variable expansion.
+        """
+        try:
+            # Prefix path; a.b + c -> a.b.c
+            if prefix:
+                if path:
+                    path = '.'.join((prefix, path))
+                else:
+                    path = prefix
+
+            # Crawl path; a.b.c.edge -> env[a][b][c][edge]
+            nodes = path.split('.')
+
+            def crawl(container, key):
+                if isinstance(container, dict):
+                    return container[key]
+                elif isinstance(container, list):
+                    return container[int(key)]
+                else:
+                    raise KeyError(key)
+
+            value = reduce(crawl, nodes, self)
+
+        except KeyError:
+            if len(nodes) == 1:
+                # Only non-existing edge left; return default
+                value = default
+            else:
+                # Try edge parent, a.b.c.edge -> a.b.edge
+                nodes = tuple(nodes)
+                path = '.'.join(nodes[:-2] + nodes[-1:])
+                value = self.resolve(path, default=default)
+
+        if isinstance(value, basestring):
+            # Value is string, expand internal variables if found; $(...)
+            if value:
+                resolve_var = lambda v, m: v.replace(m.group(0), self.resolve(m.group(1), default=default))
+                value = reduce(resolve_var, re.finditer('\$\((.+?)\)', value), value)
+
+            if value:
+                value = value.strip()
+
+        elif isinstance(value, dict):
+            # Value is dict, resolve item values to ensure variable expansion
+            for item_key, item_value in value.iteritems():
+                item_path = '.'.join((path, item_key))
+                value[item_key] = self.resolve(item_path)
+
+        elif isinstance(value, list):
+            # Value is list, resolve items to ensure variable expansion
+            for i, list_value in enumerate(value):
+                index_path = '.'.join((path, str(i)))
+                value[i] = self.resolve(index_path)
+
+        return value
