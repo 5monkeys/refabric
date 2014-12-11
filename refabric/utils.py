@@ -34,61 +34,61 @@ class _AttributeDict(object):
             from refabric.state import apply_role_definitions
             apply_role_definitions(value[0])
 
-    @staticmethod
-    def resolve(self, path=None, prefix=None, default=None):
-        """
-        Path lookup helper with deep dot notation, parent fallback and variable expansion.
-        """
-        try:
-            # Prefix path; a.b + c -> a.b.c
-            if prefix:
-                if path:
-                    path = '.'.join((prefix, path))
-                else:
-                    path = prefix
 
-            # Crawl path; a.b.c.edge -> env[a][b][c][edge]
-            nodes = path.split('.')
-
-            def crawl(container, key):
-                if isinstance(container, dict):
-                    return container[key]
-                elif isinstance(container, list):
-                    return container[int(key)]
-                else:
-                    raise KeyError(key)
-
-            value = reduce(crawl, nodes, self)
-
-        except KeyError:
-            if len(nodes) == 1:
-                # Only non-existing edge left; return default
-                value = default
+def resolve(dikt, path=None, prefix=None, default=None):
+    """
+    Dict path lookup helper with deep dot notation, parent fallback and variable expansion.
+    """
+    try:
+        # Prefix path; a.b + c -> a.b.c
+        if prefix:
+            if path:
+                path = '.'.join((prefix, path))
             else:
-                # Try edge parent, a.b.c.edge -> a.b.edge
-                nodes = tuple(nodes)
-                path = '.'.join(nodes[:-2] + nodes[-1:])
-                value = self.resolve(path, default=default)
+                path = prefix
 
-        if isinstance(value, basestring):
-            # Value is string, expand internal variables if found; $(...)
-            if value:
-                resolve_var = lambda v, m: v.replace(m.group(0), self.resolve(m.group(1), default=default))
-                value = reduce(resolve_var, re.finditer('\$\((.+?)\)', value), value)
+        # Crawl path; a.b.c.edge -> env[a][b][c][edge]
+        nodes = path.split('.')
 
-            if value:
-                value = value.strip()
+        def crawl(container, key):
+            if isinstance(container, dict):
+                return container[key]
+            elif isinstance(container, list):
+                return container[int(key)]
+            else:
+                raise KeyError(key)
 
-        elif isinstance(value, dict):
-            # Value is dict, resolve item values to ensure variable expansion
-            for item_key, item_value in value.iteritems():
-                item_path = '.'.join((path, item_key))
-                value[item_key] = self.resolve(item_path)
+        value = reduce(crawl, nodes, dikt)
 
-        elif isinstance(value, list):
-            # Value is list, resolve items to ensure variable expansion
-            for i, list_value in enumerate(value):
-                index_path = '.'.join((path, str(i)))
-                value[i] = self.resolve(index_path)
+    except KeyError:
+        if len(nodes) == 1:
+            # Only non-existing edge left; return default
+            value = default
+        else:
+            # Try edge parent, a.b.c.edge -> a.b.edge
+            nodes = tuple(nodes)
+            path = '.'.join(nodes[:-2] + nodes[-1:])
+            value = resolve(dikt, path, default=default)
 
-        return value
+    if isinstance(value, basestring):
+        # Value is string, expand internal variables if found; $(...)
+        if value:
+            resolve_var = lambda v, m: v.replace(m.group(0), resolve(dikt, m.group(1), default=default))
+            value = reduce(resolve_var, re.finditer('\$\((.+?)\)', value), value)
+
+        if value:
+            value = value.strip()
+
+    elif isinstance(value, dict):
+        # Value is dict, resolve item values to ensure variable expansion
+        for item_key, item_value in value.iteritems():
+            item_path = '.'.join((path, item_key))
+            value[item_key] = resolve(dikt, item_path)
+
+    elif isinstance(value, list):
+        # Value is list, resolve items to ensure variable expansion
+        for i, list_value in enumerate(value):
+            index_path = '.'.join((path, str(i)))
+            value[i] = resolve(dikt, index_path)
+
+    return value

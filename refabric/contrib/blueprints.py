@@ -11,7 +11,7 @@ from fabric.utils import warn
 
 from .templates import upload
 from ..context_managers import sudo, silent, hide_prefix
-from ..utils import info
+from ..utils import info, resolve
 
 __all__ = ['get']
 
@@ -25,7 +25,7 @@ class Blueprint(object):
     def __init__(self, blueprint):
         self.blueprint = blueprint
         self.name = blueprint.rsplit('.')[-1]
-        self.settings = partial(env.resolve, prefix='settings.{}'.format(self.name))
+        self.settings = partial(resolve, env, prefix='settings.{}'.format(self.name))
 
     def __contains__(self, item):
         return bool(self.settings(item))
