@@ -108,7 +108,7 @@ class Blueprint(object):
                 clone = os.path.join(destination, template)
                 if os.path.exists(clone):
                     with silent('warnings'):
-                        diff = local('diff {} {}'.format(clone, origin), capture=True)
+                        diff = local('diff -uN {} {}'.format(clone, origin), capture=True)
                     if diff.failed:
                         warn('DIFF > Skipping template: {}'.format(template))
                         with hide_prefix():
