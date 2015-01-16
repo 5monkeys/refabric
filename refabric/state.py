@@ -59,9 +59,12 @@ def switch_env(name='default'):
         apply_role_definitions(fabric.state.env.roles[0], force=True)
 
 
-def apply_role_definitions(role, force=False):
+def apply_role_definitions(role=None, force=False):
     """
-    Merge or update role(s) definitions into env
+    Merge or update role(s) definitions into env.
+
+    :param role: Name of role, if None given then only revert
+    :param force: Skip reverting state before applying role
     """
     # Restore old env state
     if not force and '_current' in fabric.state.env.states:
@@ -69,18 +72,19 @@ def apply_role_definitions(role, force=False):
         fabric.state.env.clear()
         fabric.state.env.update(current_state)
 
-    definitions = fabric.state.env.roledefs.get(role, {})
+    if role:
+        definitions = fabric.state.env.roledefs.get(role, {})
 
-    # Ensure dict style role definitions
-    if not isinstance(definitions, dict):
-        abort('Roledefs must be dict style objects')
+        # Ensure dict style role definitions
+        if not isinstance(definitions, dict):
+            abort('Roledefs must be dict style objects')
 
-    # Remember current env state
-    fabric.state.env.states['_current'] = fabric.state.env.copy()
+        # Remember current env state
+        fabric.state.env.states['_current'] = fabric.state.env.copy()
 
-    if fabric.state.env.merge_states:
-        fabric.state.env.merge(definitions)
-    else:
-        fabric.state.env.update(definitions)
+        if fabric.state.env.merge_states:
+            fabric.state.env.merge(definitions)
+        else:
+            fabric.state.env.update(definitions)
 
     load_blueprints()
