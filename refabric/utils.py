@@ -1,5 +1,5 @@
 import re
-from fabric.utils import puts
+from fabric.utils import puts, warn
 
 from .colors import grey, green, yellow
 
@@ -12,7 +12,12 @@ def info(text, *args, **kwargs):
         text = color(text)
         args = [yellow(arg) for arg in args]
         kwargs = {key: yellow(value) for key, value in kwargs.items()}
-        text = text.format(*args, **kwargs)
+
+        if args or kwargs:
+            try:
+                text = text.format(*args, **kwargs)
+            except (KeyError, IndexError) as exc:
+                warn('Failed to format %r: %s' % (text, exc))
 
         puts(text)
 
