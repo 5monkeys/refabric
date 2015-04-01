@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from re import compile
 
 import fabric.state
@@ -6,15 +7,15 @@ from fabric.utils import abort
 
 
 VAR_PATTERN = compile('\$\((.+?)\)')
-blueprints = {}
+blueprints = OrderedDict()
 
 
 def load_blueprints(packages=None):
     """
     Load blueprints/tasks from fabric env
     """
-    callables = {}
-    executables = {}
+    callables = OrderedDict()
+    executables = OrderedDict()
 
     # Fallback on blueprints from env
     packages = packages or fabric.state.env.get('blueprints') or []
