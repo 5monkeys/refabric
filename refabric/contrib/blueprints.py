@@ -25,13 +25,17 @@ class Blueprint(object):
     def __init__(self, blueprint):
         self.blueprint = blueprint
         self.name = blueprint.rsplit('.')[-1]
-        self.settings = partial(resolve, env, prefix='settings.{}'.format(self.name))
+        self.settings = partial(resolve, env,
+                                prefix='settings.{}'.format(self.name))
 
     def __contains__(self, item):
         return bool(self.settings(item))
 
     def get(self, setting, default=None):
         return self.settings(setting, default=default)
+
+    def fetch(self, *settings):
+        return {setting: self.get('setting') for setting in settings}
 
     def get_user_template_path(self, relative_path='', role=None):
         deploy_root = env['real_fabfile']
@@ -57,11 +61,14 @@ class Blueprint(object):
         return jinja2.Environment(loader=self.get_template_loader())
 
     def render_template(self, template, context=None):
-        text = self.get_jinja_env().get_template(template).render(**context or {})
+        text = self.get_jinja_env()\
+            .get_template(template)\
+            .render(**context or {})
         text = text.encode('utf-8')
         return text
 
-    def upload(self, template, destination, context=None, user=None, group=None):
+    def upload(self, template, destination, context=None, user=None,
+               group=None):
         jinja_env = self.get_jinja_env()
         context = context or {}
         context.setdefault('host', env.host_string)
@@ -69,14 +76,16 @@ class Blueprint(object):
         context['env'] = env.shell_env
         context['settings'] = self.get(None)
         with sudo('root'):
-            return upload(template, destination, context=context, user=user, group=group,
+            return upload(template, destination, context=context, user=user,
+                          group=group,
                           jinja_env=jinja_env)
 
     def download(self, remote_path, rel_destination_path, role=None):
         """
         Currently only supports downloading single file
         """
-        destination_path = self.get_user_template_path(rel_destination_path, role=role)
+        destination_path = self.get_user_template_path(rel_destination_path,
+                                                       role=role)
 
         # Append filename to destination if missing
         filename = os.path.basename(remote_path)
@@ -90,9 +99,11 @@ class Blueprint(object):
     def inherit_templates(self, role=None):
         """
         Copy blueprint default templates to local working directory.
-        If active role is present, a local top-level role directory will be created.
+        If active role is present, a local top-level role directory will be
+        created.
 
-        Already existing templates that differs with default template will be skipped and a diff will be printed.
+        Already existing templates that differs with default template will be
+        skipped and a diff will be printed.
 
         :param role: Optional local role directory to output templates to.
         """
@@ -108,7 +119,8 @@ class Blueprint(object):
                 clone = os.path.join(destination, template)
                 if os.path.exists(clone):
                     with silent('warnings'):
-                        diff = local('diff -uN {} {}'.format(clone, origin), capture=True)
+                        diff = local('diff -uN {} {}'.format(clone, origin),
+                                     capture=True)
                     if diff.failed:
                         warn('DIFF > Skipping template: {}'.format(template))
                         with hide_prefix():
