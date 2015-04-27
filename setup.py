@@ -47,6 +47,7 @@ setup(
         'Topic :: System :: Systems Administration',
     ],
     install_requires=[
-        'Fabric >= 1.8.2'
+        'Fabric >= 1.8.2',
+        'enum34'
     ]
 )
