@@ -34,33 +34,43 @@ class FileDescriptor(str):
         return FileDescriptor(path)
 
     def __iter__(self):
-        return iter(FileDescriptor(os.path.join(self, fd)) for fd in os.listdir(self))
+        return iter(FileDescriptor(os.path.join(self, fd))
+                    for fd in os.listdir(self))
 
 
-def upload(source, destination, context=None, user=None, group=None, jinja_env=None):
+def upload(source, destination, context=None, user=None, group=None,
+           jinja_env=None):
     """
-    Will render and upload a local file or folder to a destination file or folder.
+    Will render and upload a local file or folder to a destination file or
+    folder.
     Destination is handled as a folder if it ends with a slash,
-    otherwise as a file and therefore could be used to rename template on upload.
+    otherwise as a file and therefore could be used to rename template on
+    upload.
 
     :param source: Path to local file or folder.
-    :param destination: Absolute destination path. Folders always end with a slash.
+    :param destination: Absolute destination path. Folders always end with a
+        slash.
     :param context: Context to render source template.
     :param user: User owner of destination file/folder
     :param group: Group owner of destination file/folder
     :param jinja_env: Jinja2 Environment to load templates from.
     :return: List of updated files
     """
-    info('Uploading templates: {}', os.path.basename(source.rstrip(os.path.sep)))
+    info('Uploading templates: {}',
+         os.path.basename(source.rstrip(os.path.sep)))
 
     tmp_dir = tempfile.mkdtemp()
+
+    jinja_env.globals.update(get_jinja_helpers())
+
     try:
         # TODO: Handle None template_loader
 
         # Filter wanted templates
         source = source.lstrip('./')
         templates = jinja_env.loader.list_templates()
-        templates = [template for template in templates if template.startswith(source)]
+        templates = [template for template in templates
+                     if template.startswith(source)]
 
         if not templates:
             # No templates is found
@@ -85,15 +95,18 @@ def upload(source, destination, context=None, user=None, group=None, jinja_env=N
 
             abs_destination_file = destination
             if destination.endswith(os.path.sep):
-                abs_destination_file = os.path.join(destination, rel_template_path)
+                abs_destination_file = os.path.join(destination,
+                                                    rel_template_path)
 
-            # Check md5sum of file present on sure with checksum generated on last upload
+            # Check md5sum of file present on sure with checksum generated on
+            # last upload
             with quiet():
-                md5_output = run('md5sum -c --status {file}.md5 || test ! -e {file}.md5'.format(
-                    file=abs_destination_file))
+                md5_output = run('md5sum -c --status {file}.md5'
+                                 ' || test ! -e {file}.md5'
+                                 .format(file=abs_destination_file))
             if md5_output.return_code != 0:
-                warn('Template "{}" checksum mismatch. File changed since last upload.'.format(
-                    template))
+                warn('Template "{}" checksum mismatch. File changed since last'
+                     ' upload.'.format(template))
                 answer = prompt('Type "yes" to overwrite, or "no" to skip:',
                                 default='no', validate='yes|no')
                 if answer == 'no':
@@ -141,18 +154,26 @@ def upload(source, destination, context=None, user=None, group=None, jinja_env=N
                 # Remove temp upload dir after sync to final destination
                 run('rm -rf {}'.format(remote_tmp_dir))
 
-            updated_files = [line.strip() for line in updated.stdout.split('\n') if line]
-            updated_files = filter(lambda f: os.path.isfile(os.path.join(tmp_dir, f)), updated_files)
+            updated_files = [line.strip()
+                             for line in updated.stdout.split('\n')
+                             if line]
+            updated_files = [f for f in updated_files
+                             if os.path.isfile(os.path.join(tmp_dir, f))]
+
             if updated_files:
                 for updated_file in updated_files:
                     updated_file_path = destination
+
                     if destination.endswith(os.path.sep):
-                        updated_file_path = os.path.join(destination, updated_file)
+                        updated_file_path = os.path.join(destination,
+                                                         updated_file)
                     else:
                         updated_file = os.path.basename(destination)
+
                     info(indent('Uploaded: {}'), updated_file)
                     # Create md5 checksum of uploaded file
-                    run('md5sum {file} > {file}.md5'.format(file=updated_file_path))
+                    run('md5sum {file} > {file}.md5'
+                        .format(file=updated_file_path))
             else:
                 puts(indent('(no changes found)'))
 
@@ -162,3 +183,8 @@ def upload(source, destination, context=None, user=None, group=None, jinja_env=N
         abort('Templates not found: "{}"'.format(e))
     finally:
         shutil.rmtree(tmp_dir)
+
+
+def get_jinja_helpers():
+    from ..utils.socket import format_socket
+    return locals()

@@ -1,9 +1,11 @@
 import re
 from fabric.utils import puts, warn
 
-from .colors import grey, green, yellow
+from ..colors import grey, green, yellow
 
-__all__ = ['info']
+from .socket import Socket
+
+__all__ = ['info', 'Socket']
 
 
 def info(text, *args, **kwargs):
