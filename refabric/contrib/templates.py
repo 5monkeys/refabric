@@ -13,6 +13,8 @@ from ..context_managers import silent, abort_on_error
 from ..operations import run
 from ..utils import info
 
+IGNORED_FILES = ['.DS_Store']
+
 
 class FileDescriptor(str):
 
@@ -67,16 +69,20 @@ def upload(source, destination, context=None, user=None, group=None,
         # TODO: Handle None template_loader
 
         # Filter wanted templates
-        source = source.lstrip('./')
+        if source.startswith('./'):
+            source = source[2:]
         templates = jinja_env.loader.list_templates()
         templates = [template for template in templates
-                     if template.startswith(source)]
+                     if template.startswith(source)
+                     and os.path.basename(template) not in IGNORED_FILES]
 
         if not templates:
             # No templates is found
             puts(indent(magenta('No templates found')))
             return
 
+        dotfiles = []
+        notdotfiles = False
         for template in templates:
             rel_template_path = template[len(source):]
             if os.path.sep in rel_template_path:
@@ -122,6 +128,10 @@ def upload(source, destination, context=None, user=None, group=None,
                 with file(rendered_template, 'w+') as f:
                     f.write(text)
                     f.write(os.linesep)  # Add newline at end removed by jinja
+                if rel_template_path[0] == '.':
+                    dotfiles.append(rendered_template)
+                else:
+                    notdotfiles = True
 
             except UnicodeDecodeError:
                 warn('Failed to render template "{}"'.format(template))
@@ -131,7 +141,10 @@ def upload(source, destination, context=None, user=None, group=None,
             remote_tmp_dir = run('mktemp -d').stdout
             run('chmod -R 777 {}'.format(remote_tmp_dir))
             try:
-                put(os.path.join(tmp_dir, '*'), remote_tmp_dir, use_sudo=True)
+                if notdotfiles:
+                    put(os.path.join(tmp_dir, '*'), remote_tmp_dir, use_sudo=True)
+                for dotfile in dotfiles:
+                    put(dotfile, remote_tmp_dir, use_sudo=True)
 
                 # Set given permissions on remote before sync
                 group = group or user or 'root'
@@ -144,7 +157,8 @@ def upload(source, destination, context=None, user=None, group=None,
                     destination = destination.rstrip(os.path.sep) + os.path.sep
 
                 # Sync templates from remote temp dir to remote destination
-                remote_tmp_dir = os.path.join(remote_tmp_dir, '*')
+                remote_tmp_dir = os.path.join(remote_tmp_dir,
+                                              '' if dotfiles else '*')
                 cmd = 'rsync -rcbiog --out-format="%n" {tmp_dir} {dest}'.format(
                     tmp_dir=remote_tmp_dir,
                     dest=destination)
@@ -164,7 +178,7 @@ def upload(source, destination, context=None, user=None, group=None,
                 for updated_file in updated_files:
                     updated_file_path = destination
 
-                    if destination.endswith(os.path.sep):
+                    if destination.endswith(os.path.sep) or is_dir(destination):
                         updated_file_path = os.path.join(destination,
                                                          updated_file)
                     else:
@@ -183,6 +197,10 @@ def upload(source, destination, context=None, user=None, group=None,
         abort('Templates not found: "{}"'.format(e))
     finally:
         shutil.rmtree(tmp_dir)
+
+
+def is_dir(path):
+    return run('test -d %s && echo OK ; true' % path).endswith('OK')
 
 
 def get_jinja_helpers():
