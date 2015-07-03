@@ -36,7 +36,7 @@ def bootstrap():
         'merge_states': True,
         'prompt_hosts': True,
         'forward_agent': True,
-        'sudo_prefix': "sudo -S -E -p '%(sudo_prompt)s' SSH_AUTH_SOCK=$SSH_AUTH_SOCK",
+        'sudo_prefix': "sudo -S -E -H -p '%(sudo_prompt)s' SSH_AUTH_SOCK=$SSH_AUTH_SOCK",
     })
 
     # Create global blueprint tasks
