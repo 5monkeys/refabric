@@ -37,6 +37,7 @@ def bootstrap():
         'prompt_hosts': True,
         'forward_agent': True,
         'sudo_prefix': "sudo -S -E -H -p '%(sudo_prompt)s' SSH_AUTH_SOCK=$SSH_AUTH_SOCK",
+        'shell': '/bin/bash -c',
     })
 
     # Create global blueprint tasks
