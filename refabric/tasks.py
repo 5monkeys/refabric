@@ -28,7 +28,9 @@ class Task(object):
                 check = lambda s: s.isdigit() and int(s) in range(len(all_hosts))
                 if not all(map(check, host_input.split(','))):
                     raise Exception('Invalid host {!r}'.format(host_input))
-
+                else:
+                    return host_input
+                
             host_choice = prompt(green('Select host(s)'), default='0', validate=validate_hosts)
             indices = map(int, host_choice.split(','))
             if len(indices) > 1 or indices[0] > 0:
