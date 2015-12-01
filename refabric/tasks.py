@@ -23,8 +23,13 @@ class Task(object):
             print("0. All")
             for i, host in enumerate(all_hosts, start=1):
                 print("{i}. {host}".format(i=i, host=host))
-            valid_indices = '[,0-%s]+' % len(all_hosts)
-            host_choice = prompt(green('Select host(s)'), default='0', validate=valid_indices)
+
+            def validate_hosts(host_input):
+                check = lambda s: s.isdigit() and int(s) in range(len(all_hosts))
+                if not all(map(check, host_input.split(','))):
+                    raise Exception('Invalid host {!r}'.format(host_input))
+
+            host_choice = prompt(green('Select host(s)'), default='0', validate=validate_hosts)
             indices = map(int, host_choice.split(','))
             if len(indices) > 1 or indices[0] > 0:
                 all_hosts = [all_hosts[i-1] for i in indices if i > 0]
