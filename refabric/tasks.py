@@ -25,13 +25,8 @@ class Task(object):
                 print("{i}. {host}".format(i=i, host=host))
 
             def validate_hosts(host_input):
-                if ',' in host_input:
-                    for h in host_input.split(','):
-                        validate_hosts(h)
-                    return host_input
-                elif host_input.isdigit() and int(host_input) in range(len(all_hosts)):
-                    return host_input
-                else:
+                check = lambda s: s.isdigit() and int(s) in range(len(all_hosts))
+                if not all(map(check, host_input.split(','))):
                     raise Exception('Invalid host {!r}'.format(host_input))
 
             host_choice = prompt(green('Select host(s)'), default='0', validate=validate_hosts)
