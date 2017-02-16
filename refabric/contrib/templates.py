@@ -14,6 +14,7 @@ from ..operations import run
 from ..utils import info
 
 IGNORED_FILES = ['.DS_Store']
+RAW_EXT = '.__raw__'
 
 
 class FileDescriptor(str):
@@ -85,6 +86,9 @@ def upload(source, destination, context=None, user=None, group=None,
         notdotfiles = False
         for template in templates:
             rel_template_path = template[len(source):]
+            is_raw = rel_template_path.endswith(RAW_EXT)
+            if is_raw:
+                rel_template_path = rel_template_path[:-len(RAW_EXT)]
             if os.path.sep in rel_template_path:
                 # Create directories for template
                 rel_template_dir = os.path.dirname(rel_template_path)
@@ -120,14 +124,23 @@ def upload(source, destination, context=None, user=None, group=None,
                     continue
 
             try:
-                text = jinja_env.get_template(template).render(**context or {})
-                text = text.encode('utf-8')
-
                 # Write rendered template to local temp dir
                 rendered_template = os.path.join(tmp_dir, rel_template_path)
-                with file(rendered_template, 'w+') as f:
-                    f.write(text)
-                    f.write(os.linesep)  # Add newline at end removed by jinja
+
+                if is_raw:
+                    for tpl_base in jinja_env.loader.searchpath:
+                        tpl_path = os.path.join(tpl_base, template)
+                        if os.path.exists(tpl_path):
+                            shutil.copy(tpl_path, rendered_template)
+                            break
+                else:
+                    text = jinja_env.get_template(template).render(**context or {})
+                    text = text.encode('utf-8')
+
+                    with file(rendered_template, 'w+') as f:
+                        f.write(text)
+                        f.write(os.linesep)  # Add newline at end removed by jinja
+
                 if rel_template_path[0] == '.':
                     dotfiles.append(rendered_template)
                 else:
