@@ -74,6 +74,7 @@ class Blueprint(object):
         context.setdefault('host', env.host_string)
         context['hosts'] = env.hosts
         context['env'] = env.shell_env
+        context['state'] = env.state
         context['settings'] = self.get(None)
         with sudo('root'):
             return upload(template, destination, context=context, user=user,
