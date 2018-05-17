@@ -1,3 +1,4 @@
+import difflib
 import os
 from fabric.context_managers import quiet
 import jinja2
@@ -117,10 +118,35 @@ def upload(source, destination, context=None, user=None, group=None,
             if md5_output.return_code != 0:
                 warn('Template "{}" checksum mismatch. File changed since last'
                      ' upload.'.format(template))
-                answer = prompt('Type "yes" to overwrite, or "no" to skip:',
-                                default='no', validate='yes|no')
-                if answer == 'no':
-                    # Skip render and upload of md5 mismatched file
+
+                skip = False
+                while True:
+                    answer = prompt('Type "yes" to overwrite, "diff" to '
+                                    'show diff, or "no" to skip:',
+                                    default='no', validate='yes|diff|no')
+                    if answer == 'diff':
+                        if is_raw:
+                            warn('Cannot show diff yet, not implemented '
+                                 'for raw files.')
+                        else:
+                            new = jinja_env.get_template(template).render(
+                                **context or {})
+                            new = new.encode('utf-8')
+                            with quiet():
+                                cur = run('cat {file}'.format(
+                                    file=abs_destination_file))
+                            df = difflib.unified_diff(
+                                cur.replace('\r', '').splitlines(True),
+                                new.splitlines(True),
+                                'current', 'new')
+                            warn(''.join(df))
+
+                    else:
+                        if answer == 'no':
+                            # Skip render and upload of md5 mismatched file
+                            skip = True
+                        break
+                if skip:
                     continue
 
             try:
