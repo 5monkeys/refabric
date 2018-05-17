@@ -139,7 +139,7 @@ def upload(source, destination, context=None, user=None, group=None,
                                 cur.replace('\r', '').splitlines(True),
                                 new.splitlines(True),
                                 'current', 'new')
-                            warn(''.join(df))
+                            warn(''.join(df) or 'No diff')
 
                     else:
                         if answer == 'no':
